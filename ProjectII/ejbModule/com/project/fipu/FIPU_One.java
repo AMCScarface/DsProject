@@ -17,26 +17,35 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.w3c.dom.Document;
 
 
 
 
 /**
- * Message-Driven Bean implementation class for: Webservice1
+ * Message-Driven Bean implementation class for: FIPU Nr. 1
+ * This class represents the Message-Driven Bean that will consume, after receiving a message from the CFE, the 
+ * Webservice provided by api.flightlookup.com
+ * @author Group Sascha Scatà, Jan Raphael Schmid Niederkofler, Christine Lunger, Benjamin Egger
  */
 @MessageDriven(activationConfig = {
 		@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
 		@ActivationConfigProperty(propertyName = "destination", propertyValue = "topic/MyTopic") })
-public class TimetableFIPU implements MessageListener {
+public class FIPU_One implements MessageListener {
+	
+	private ParseFIPU_One parseResp;
 
 	/**
-	 * Default constructor.
+	 * Set up the Parsing class for this MessageDriven-Bean
 	 */
-	public TimetableFIPU() throws Exception {
+	public FIPU_One() throws Exception {
+		parseResp = new ParseFIPU_One();
 	}
 
 	/**
-	 * @see MessageListener#onMessage(Message)
+	 * On incoming message, this method will extract the information previously sent by the CFE and then 
+	 * through an external HttpClient consume the Webservice; note, that the provided Webservice will sent
+	 * back an XML-String, which will be parsed by the parsing class linked to this class 
 	 */
 	public void onMessage(Message message) {
 		System.out.println("ok");
@@ -46,21 +55,23 @@ public class TimetableFIPU implements MessageListener {
 		            String from = map.getString("From");
 		            String to = map.getString("To");
 		            String date = map.getString("Date");
-		            String key = map.getString("Key");
-		            //getTimetable(from, to, date, key);
+		            
+		            //connection to the webservice
 		            HttpClient client = HttpClientBuilder.create().build();
 		            URIBuilder builder = new URIBuilder("http://api.flightlookup.com/otatimetable/v1/TimeTable/");
-		            builder.setParameter("key", "8D7FE248-2333-4E12-89C9-90F633C9F6F4");
-		            builder.setParameter("From", "MIL");
-		            builder.setParameter("To", "ROM");
-		            builder.setParameter("Date", "05/02/14");
+		            builder.setParameter("key", "556B85E8-EBB2-4D01-B79A-E3E3071FD9D6");
+		            builder.setParameter("From", from);
+		            builder.setParameter("To", to);
+		            builder.setParameter("Date", date);
 		            URI uri = builder.build();
 		            HttpGet request = new HttpGet(uri);
 		          	HttpResponse response = client.execute(request);
 		          	HttpEntity entity = response.getEntity();
 		          	if (entity != null) {
-		          		//System.out.println(EntityUtils.toString(entity));
-		          		connectToQueue(entity);
+		          		//Get the respone from the Webservice, obtaining a String:
+		          		Document doc = parseResp.loadXMLFromString(EntityUtils.toString(entity));
+		          		String res = parseResp.parseRespone(doc);
+		          		connectToQueue(res);
 		          	}
 		        } 
 		    } catch (JMSException e) {
@@ -70,7 +81,14 @@ public class TimetableFIPU implements MessageListener {
 		    }
 	}
 
-	public void connectToQueue(HttpEntity entity) throws NamingException, JMSException {
+	/**
+	 * This method will, immediately after getting the parsed reponse from the Webservice, connect to the queue which
+	 * will be used to send a response to the CFE.
+	 * @param entity - The parsed respone of the Webservice
+	 * @throws NamingException - Naming exception related to the Connectionfactory
+	 * @throws JMSException - Other common erros related to the JMS
+	 */
+	public void connectToQueue(String entity) throws NamingException, JMSException {
 		Context ctx = null;
 		QueueConnection connect = null;
 		QueueSession session = null;
@@ -91,21 +109,17 @@ public class TimetableFIPU implements MessageListener {
 			}
 			sender = session.createSender(queue);
 			connect.start();
-			
-			
+			//Response is a TextMessage, since the parsed Webservice-Response will result as a String:
 			TextMessage msg = session.createTextMessage();
 			try {
-				msg.setText(EntityUtils.toString(entity));
+				msg.setText(entity);
+				msg.setStringProperty("NumberOfFIPU", "FIPU Nr. 1");
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
+			//Finally send to the queue the parsed response as a textmessage:
 			sender.send(msg);
-			System.out.println("Sending ");
-			// System.out.println( "Sending " + msg.toString() );
 		} finally {
 			try {
 				if (null != sender)
