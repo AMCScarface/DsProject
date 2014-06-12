@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="ejbModule"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.7.0_17">
-		<attributes>
-			<attribute name="owner.project.facets" value="java"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.jboss.ide.eclipse.as.core.server.runtime.runtimeTarget/JBoss 7.1 Runtime">
 		<attributes>
 			<attribute name="owner.project.facets" value="jst.ejb"/>
@@ -17,5 +12,8 @@
 	<classpathentry kind="lib" path="C:/Users/Sascha/Desktop/jboss-as-7.1.1.Final/modules/commons/main/httpclient-cache-4.3.3.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Sascha/Desktop/jboss-as-7.1.1.Final/modules/commons/main/httpcore-4.3.2.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Sascha/Desktop/jboss-as-7.1.1.Final/modules/commons/main/httpmime-4.3.3.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="C:/Users/Sascha/Desktop/mockrunner-0.4.2/lib/jdk1.6/j2ee1.4/mockrunner.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
